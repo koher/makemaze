@@ -31,7 +31,7 @@ do {
 }
 
 // Making a maze
-let maze: Image<Cell> = .init(width: width, height: height)
+let maze: Image<MazeCell> = .init(width: width, height: height)
 
 // Output
 let data: Data = maze.map { $0.color }.data(using: .png)!

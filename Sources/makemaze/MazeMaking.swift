@@ -1,6 +1,6 @@
 import SwiftImage
 
-extension Image where Pixel == Cell {
+extension Image where Pixel == MazeCell {
     // Making a maze using the algorithm
     // explained at https://algoful.com/Archive/Algorithm/MazeExtend
     init(width: Int, height: Int) {
@@ -90,7 +90,7 @@ extension Image where Pixel == Cell {
     }
 }
 
-enum Cell: Equatable {
+enum MazeCell: Equatable {
     case start
     case goal
     case path
