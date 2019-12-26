@@ -78,8 +78,6 @@ var maze: Image<Cell> = .init(width: width, height: height) { x, y in
 }
 
 maze[1, 1] = .start
-maze[width - 2, height - 2] = .goal
-
 if Bool.random() {
     maze[2, 1] = .wall(0)
     maze[2, 2] = .wall(0)
@@ -88,6 +86,7 @@ if Bool.random() {
     maze[2, 2] = .wall(0)
 }
 
+maze[width - 2, height - 2] = .goal
 if Bool.random() {
     maze[width - 3, height - 2] = .wall(0)
     maze[width - 3, height - 3] = .wall(0)
@@ -134,8 +133,13 @@ wallsMaking: while let (x, y) = pointsToStartWall.popLast() {
             }
         }
         
-        wallPoints.removeLast()
-        point = wallPoints.removeLast()
+        guard let _ = wallPoints.popLast() else {
+            preconditionFailure("Never reaches here.")
+        }
+        guard let nextPoint = wallPoints.popLast() else {
+            preconditionFailure("Never reaches here.")
+        }
+        point = nextPoint
     }
 }
 
