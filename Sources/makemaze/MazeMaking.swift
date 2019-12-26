@@ -3,7 +3,11 @@ import SwiftImage
 extension Image where Pixel == MazeCell {
     // Making a maze using the algorithm
     // explained at https://algoful.com/Archive/Algorithm/MazeExtend
-    init(width: Int, height: Int) {
+    init(width: Int, height: Int) throws {
+        guard width >= 7, width.isOdd, height >= 7, height.isOdd else {
+            throw MazeMakingError(width: width, height: height)
+        }
+        
         self.init(width: width, height: height) { x, y in
             if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
                 return .wall(0)
@@ -42,9 +46,9 @@ extension Image where Pixel == MazeCell {
     private mutating func makeWalls() {
         var pointsToStartWall: [(Int, Int)] = []
         for y in yRange {
-            guard y.isMultiple(of: 2) else { continue }
+            guard y.isEven else { continue }
             for x in xRange {
-                guard x.isMultiple(of: 2) else { continue }
+                guard x.isEven else { continue }
                 pointsToStartWall.append((x, y))
             }
         }
@@ -90,6 +94,15 @@ extension Image where Pixel == MazeCell {
     }
 }
 
+struct MazeMakingError: Error, CustomStringConvertible {
+    let width: Int
+    let height: Int
+    
+    var description: String {
+        "The width and the height must be a odd number greater than or equal to 7: width = \(width), height = \(height)"
+    }
+}
+
 enum MazeCell: Equatable {
     case start
     case goal
@@ -110,6 +123,16 @@ extension Image {
     fileprivate subscript(point: (Int, Int)) -> Pixel {
         get { self[point.0, point.1] }
         set { self[point.0, point.1] = newValue }
+    }
+}
+
+extension Int {
+    var isOdd: Bool {
+        !isMultiple(of: 2)
+    }
+    
+    var isEven: Bool {
+        isMultiple(of: 2)
     }
 }
 

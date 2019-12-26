@@ -1,24 +1,20 @@
 # makemaze
 
-```bash
-# Makes a rectangular maze
-makemaze <width> <height> > path/to/output/file.png
+```
+Usage:
+
+    $ makemaze
+
+Options:
+    -w, --width [default: 1023] - Width of the created maze
+    -h, --height [default: 1023] - Height of the created maze
+    -s, --scale [default: 1] - Scale of the output image
 ```
 
-```bash
-# Makes a squre maze
-makemaze <size> > path/to/output/file.png
-```
+## Examples
 
 ```bash
-# Makes a maze with the default size (1023x1023)
-makemaze <size> > path/to/output/file.png
+makemaze -w 127 -h 127 -s 4 > maze.png
 ```
 
-## Example
-
-```bash
-makemaze 127 > maze.png
-```
-
-<img src="maze.png" style="width: 508px; height: 508px; image-rendering: pixelated;" />
+![created maze](maze.png)

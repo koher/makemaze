@@ -1,38 +1,24 @@
 import Foundation
 import SwiftImage
+import Commander
 
-let defaultWidth = 1023
-let defaultHeight = 1023
-
-// Input
-let width: Int
-let height: Int
-do {
-    let arguments = CommandLine.arguments
-    switch arguments.count {
-    case 0, 1:
-        width = defaultWidth
-        height = defaultHeight
-    case 2:
-        let size: Int? = Int(arguments[1])
-        width =  size ?? defaultWidth
-        height = size ?? defaultHeight
-    case 3...:
-        width = Int(arguments[1]) ?? defaultWidth
-        height = Int(arguments[2]) ?? defaultHeight
-    default:
-        preconditionFailure("Never reaches here.")
-    }
-    
-    if width < 7 || height < 7 || width.isMultiple(of: 2) || height.isMultiple(of: 2) {
-        FileHandle.standardError.write("The width and the height must be odd numbers greater than or equal to 7: width = \(width), height = \(height)\n".data(using: .utf8)!)
-        exit(1)
+struct IllegalScaleError: Error, CustomStringConvertible {
+    let scale: Int
+    var description: String {
+        "The scale must be greater than or equal to 1: scale = \(scale)"
     }
 }
 
-// Making a maze
-let maze: Image<MazeCell> = .init(width: width, height: height)
-
-// Output
-let data: Data = maze.map { $0.color }.data(using: .png)!
-FileHandle.standardOutput.write(data)
+command(
+    Option("width", default: 1023, flag: "w", description: "Width of the created maze"),
+    Option("height", default: 1023, flag: "h", description: "Height of the created maze"),
+    Option("scale", default: 1, flag: "s", description: "Scale of the output image") {
+        guard $0 >= 1 else { throw IllegalScaleError(scale: $0) }
+        return $0
+    }
+) { width, height, scale in
+    var maze: Image<MazeCell> = try .init(width: width, height: height)
+    maze = maze.resizedTo(width: width * scale, height: height * scale)
+    let data: Data = maze.map { $0.color }.data(using: .png)!
+    FileHandle.standardOutput.write(data)
+}.run()
