@@ -4,10 +4,17 @@ import SwiftImage
 let defaultWidth = 1023
 let defaultHeight = 1023
 
-let wall:  RGBA<UInt8> = .init(0x000000FF)
-let path:  RGBA<UInt8> = .init(0xFFFFFFFF)
-let start: RGBA<UInt8> = .init(0x0000FFFF)
-let goal:  RGBA<UInt8> = .init(0x00FF00FF)
+extension Image where Pixel == RGBA<UInt8> {
+    static let path:  RGBA<UInt8> = .init(0xFFFFFFFF)
+    static let wall:  RGBA<UInt8> = .init(0x000000FF)
+    static let start: RGBA<UInt8> = .init(0x0000FFFF)
+    static let goal:  RGBA<UInt8> = .init(0x00FF00FF)
+}
+
+extension Image where Pixel == Int {
+    static let path: Int = 0
+    static let defaultWall: Int = 1
+}
 
 struct Point: Hashable {
     var x: Int
@@ -73,31 +80,28 @@ do {
 
 // Making a maze using the algorithm
 // explained at https://algoful.com/Archive/Algorithm/MazeExtend
-var maze: Image<RGBA<UInt8>> = Image(width: width, height: height) { x, y in
+var maze: Image<Int> = Image(width: width, height: height) { x, y in
     if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
-        return wall
+        return Image<Int>.defaultWall
     } else {
-        return path
+        return Image<Int>.path
     }
 }
 
-maze[1, 1] = start
-maze[width - 2, height - 2] = goal
-
 if Bool.random() {
-    maze[2, 1] = wall
-    maze[2, 2] = wall
+    maze[2, 1] = Image<Int>.defaultWall
+    maze[2, 2] = Image<Int>.defaultWall
 } else {
-    maze[1, 2] = wall
-    maze[2, 2] = wall
+    maze[1, 2] = Image<Int>.defaultWall
+    maze[2, 2] = Image<Int>.defaultWall
 }
 
 if Bool.random() {
-    maze[width - 3, height - 2] = wall
-    maze[width - 3, height - 3] = wall
+    maze[width - 3, height - 2] = Image<Int>.defaultWall
+    maze[width - 3, height - 3] = Image<Int>.defaultWall
 } else {
-    maze[width - 2, height - 3] = wall
-    maze[width - 3, height - 3] = wall
+    maze[width - 2, height - 3] = Image<Int>.defaultWall
+    maze[width - 3, height - 3] = Image<Int>.defaultWall
 }
 
 var pointsToStartWall: [Point] = []
@@ -110,30 +114,31 @@ for y in maze.yRange {
 }
 pointsToStartWall.shuffle()
 
+var wall: Int = Image<Int>.defaultWall
 wallsMaking: while let pointToStartWall = pointsToStartWall.popLast() {
-    guard maze[pointToStartWall] == path else { continue }
+    guard maze[pointToStartWall] == Image<Int>.path else { continue }
+    
+    wall += 1
     
     var wallPoints: [Point] = []
-    var wallPointSet: Set<Point> = []
     
     var point = pointToStartWall
     wallMaking: while true {
         maze[point] = wall
         wallPoints.append(point)
-        wallPointSet.insert(point)
 
         for direction in directions.shuffled() {
-            guard maze[point + direction] == path else { continue }
-            if wallPointSet.contains(point + direction * 2) { continue }
+            guard maze[point + direction] == Image<Int>.path else { continue }
+            if maze[point + direction * 2] == wall { continue }
             
             point += direction
             maze[point] = wall
             
             point += direction
-            if maze[point] == wall {
-                continue wallsMaking
-            } else {
+            if maze[point] == Image<Int>.path {
                 continue wallMaking
+            } else {
+                continue wallsMaking
             }
         }
         
@@ -142,6 +147,10 @@ wallsMaking: while let pointToStartWall = pointsToStartWall.popLast() {
     }
 }
 
+var mazeImage: Image<RGBA<UInt8>> = maze.map { $0 == Image<Int>.path ? Image<RGBA<UInt8>>.path : Image<RGBA<UInt8>>.wall }
+mazeImage[1, 1] = Image<RGBA<UInt8>>.start
+mazeImage[width - 2, height - 2] = Image<RGBA<UInt8>>.goal
+
 // Output
-let data: Data = maze.data(using: .png)!
+let data: Data = mazeImage.data(using: .png)!
 FileHandle.standardOutput.write(data)
