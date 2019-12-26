@@ -20,39 +20,24 @@ enum Cell: Equatable {
     }
 }
 
-struct Point: Hashable {
-    var x: Int
-    var y: Int
-    
-    init(_ x: Int, _ y: Int) {
-        self.x = x
-        self.y = y
-    }
-    
-    static func +(lhs: Self, rhs: Self) -> Self {
-        return .init(lhs.x + rhs.x, lhs.y + rhs.y)
-    }
-    
-    static func +=(lhs: inout Self, rhs: Self) {
-        lhs = lhs + rhs
-    }
-    
-    static func *(lhs: Self, rhs: Int) -> Self {
-        return .init(lhs.x * rhs, lhs.y * rhs)
-    }
+func +(lhs: (Int, Int), rhs: (Int, Int)) -> (Int, Int) {
+    return (lhs.0 + rhs.0, lhs.1 + rhs.1)
 }
 
-let directions: [Point] = [
-    .init(-1, 0),
-    .init(0, -1),
-    .init(1, 0),
-    .init(0, 1),
-]
+func +=(lhs: inout (Int, Int), rhs: (Int, Int)) {
+    lhs = lhs + rhs
+}
+
+func *(lhs: (Int, Int), rhs: Int) -> (Int, Int) {
+    return (lhs.0 * rhs, lhs.1 * rhs)
+}
+
+let directions: [(Int, Int)] = [(-1, 0), (0, -1), (1, 0), (0, 1)]
 
 extension Image {
-    subscript(point: Point) -> Pixel {
-        get { self[point.x, point.y] }
-        set { self[point.x, point.y] = newValue }
+    subscript(point: (Int, Int)) -> Pixel {
+        get { self[point.0, point.1] }
+        set { self[point.0, point.1] = newValue }
     }
 }
 
@@ -111,35 +96,35 @@ if Bool.random() {
     maze[width - 3, height - 3] = .wall(0)
 }
 
-var pointsToStartWall: [Point] = []
+var pointsToStartWall: [(Int, Int)] = []
 for y in maze.yRange {
     guard y.isMultiple(of: 2) else { continue }
     for x in maze.xRange {
         guard x.isMultiple(of: 2) else { continue }
-        pointsToStartWall.append(Point(x, y))
+        pointsToStartWall.append((x, y))
     }
 }
 pointsToStartWall.shuffle()
 
-var wall: Int = 0
-wallsMaking: while let pointToStartWall = pointsToStartWall.popLast() {
-    guard maze[pointToStartWall] == .path else { continue }
+var wallCount: Int = 0
+wallsMaking: while let (x, y) = pointsToStartWall.popLast() {
+    guard maze[x, y] == .path else { continue }
     
-    wall += 1
+    wallCount += 1
     
-    var wallPoints: [Point] = []
+    var wallPoints: [(Int, Int)] = []
     
-    var point = pointToStartWall
+    var point = (x, y)
     wallMaking: while true {
-        maze[point] = .wall(wall)
+        maze[point] = .wall(wallCount)
         wallPoints.append(point)
 
         for direction in directions.shuffled() {
             guard maze[point + direction] == .path else { continue }
-            if maze[point + direction * 2] == .wall(wall) { continue }
+            if maze[point + direction * 2] == .wall(wallCount) { continue }
             
             point += direction
-            maze[point] = .wall(wall)
+            maze[point] = .wall(wallCount)
             
             point += direction
             if maze[point] == .path {
