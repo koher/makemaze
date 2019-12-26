@@ -4,16 +4,20 @@ import SwiftImage
 let defaultWidth = 1023
 let defaultHeight = 1023
 
-extension RGBA where Channel == UInt8 {
-    static let path:  RGBA<UInt8> = .init(0xFFFFFFFF)
-    static let wall:  RGBA<UInt8> = .init(0x000000FF)
-    static let start: RGBA<UInt8> = .init(0x0000FFFF)
-    static let goal:  RGBA<UInt8> = .init(0x00FF00FF)
-}
-
-extension Int {
-    static let path: Int = 0
-    static let defaultWall: Int = 1
+enum Cell: Equatable {
+    case start
+    case goal
+    case path
+    case wall(Int)
+    
+    var color: RGBA<UInt8> {
+        switch self {
+        case .start:   return .init(0x0000FFFF)
+        case .goal:    return .init(0xFF0000FF)
+        case .path:    return .init(0xFFFFFFFF)
+        case .wall(_): return .init(0x000000FF)
+        }
+    }
 }
 
 struct Point: Hashable {
@@ -80,28 +84,31 @@ do {
 
 // Making a maze using the algorithm
 // explained at https://algoful.com/Archive/Algorithm/MazeExtend
-var maze: Image<Int> = Image(width: width, height: height) { x, y in
+var maze: Image<Cell> = .init(width: width, height: height) { x, y in
     if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
-        return .defaultWall
+        return .wall(0)
     } else {
         return .path
     }
 }
 
+maze[1, 1] = .start
+maze[width - 2, height - 2] = .goal
+
 if Bool.random() {
-    maze[2, 1] = .defaultWall
-    maze[2, 2] = .defaultWall
+    maze[2, 1] = .wall(0)
+    maze[2, 2] = .wall(0)
 } else {
-    maze[1, 2] = .defaultWall
-    maze[2, 2] = .defaultWall
+    maze[1, 2] = .wall(0)
+    maze[2, 2] = .wall(0)
 }
 
 if Bool.random() {
-    maze[width - 3, height - 2] = .defaultWall
-    maze[width - 3, height - 3] = .defaultWall
+    maze[width - 3, height - 2] = .wall(0)
+    maze[width - 3, height - 3] = .wall(0)
 } else {
-    maze[width - 2, height - 3] = .defaultWall
-    maze[width - 3, height - 3] = .defaultWall
+    maze[width - 2, height - 3] = .wall(0)
+    maze[width - 3, height - 3] = .wall(0)
 }
 
 var pointsToStartWall: [Point] = []
@@ -114,7 +121,7 @@ for y in maze.yRange {
 }
 pointsToStartWall.shuffle()
 
-var wall: Int = .defaultWall
+var wall: Int = 0
 wallsMaking: while let pointToStartWall = pointsToStartWall.popLast() {
     guard maze[pointToStartWall] == .path else { continue }
     
@@ -124,15 +131,15 @@ wallsMaking: while let pointToStartWall = pointsToStartWall.popLast() {
     
     var point = pointToStartWall
     wallMaking: while true {
-        maze[point] = wall
+        maze[point] = .wall(wall)
         wallPoints.append(point)
 
         for direction in directions.shuffled() {
             guard maze[point + direction] == .path else { continue }
-            if maze[point + direction * 2] == wall { continue }
+            if maze[point + direction * 2] == .wall(wall) { continue }
             
             point += direction
-            maze[point] = wall
+            maze[point] = .wall(wall)
             
             point += direction
             if maze[point] == .path {
@@ -147,10 +154,6 @@ wallsMaking: while let pointToStartWall = pointsToStartWall.popLast() {
     }
 }
 
-var mazeImage: Image<RGBA<UInt8>> = maze.map { $0 == .path ? .path : .wall }
-mazeImage[1, 1] = .start
-mazeImage[width - 2, height - 2] = .goal
-
 // Output
-let data: Data = mazeImage.data(using: .png)!
+let data: Data = maze.map { $0.color }.data(using: .png)!
 FileHandle.standardOutput.write(data)
