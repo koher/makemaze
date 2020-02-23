@@ -1,4 +1,5 @@
 import Foundation
+import Maze
 import SwiftImage
 import Commander
 
@@ -17,8 +18,9 @@ command(
         return $0
     }
 ) { width, height, scale in
-    var maze: Image<MazeCell> = try .init(width: width, height: height)
-    maze = maze.resizedTo(width: width * scale, height: height * scale)
-    let data: Data = maze.map { $0.color }.data(using: .png)!
+    let maze: Maze<UInt8> = try .makeMaze(width: width, height: height, start: 255, goal: 255, path: 255, wall: 0)
+    var mazeImage: Image<UInt8> = .init(width: maze.width, height: maze.height, pixels: maze)
+    mazeImage = mazeImage.resizedTo(width: width * scale, height: height * scale, interpolatedBy: .nearestNeighbor)
+    let data: Data = mazeImage.data(using: .png)!
     FileHandle.standardOutput.write(data)
 }.run()
